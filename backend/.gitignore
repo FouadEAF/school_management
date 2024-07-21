@@ -38,6 +38,7 @@ db.sqlite3
 
 # Django migrations
 migrations/*
+migrations/*.py
 
 # PyInstaller
 # Usually these files are written by a python script from a template
