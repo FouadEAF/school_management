@@ -12,12 +12,6 @@ This project is a Django-based backend for managing school operations, including
 - Calendar
 - Notification System
 
-## Project Structure
-
-Take a look on code
-
-## Getting Started
-
 ## Prerequisites
 
 - Python 3.12+
@@ -51,7 +45,7 @@ Take a look on code
 
    > python manage.py createsuperuser
 
-6. Run the development server:
+6. Run the server:
 
    > python manage.py runserver
 
