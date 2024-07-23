@@ -18,12 +18,12 @@ Take a look on code
 
 ## Getting Started
 
-### Prerequisites
+## Prerequisites
 
 - Python 3.12+
 - Django
 
-### Installation
+## Installation
 
 1. Clone the repository:
 
@@ -35,9 +35,8 @@ Take a look on code
 
    > python -m venv venv
 
-   # On Mac, use `source venv/bin/activate`
-
-   # On Windows, use `./venv/Scripts/activate`
+   - On Mac, use `source venv/bin/activate`
+   - On Windows, use `./venv/Scripts/activate`
 
 3. Install the dependencies:
 
@@ -55,7 +54,7 @@ Take a look on code
 6. Run the development server:
    > python manage.py runserver
 
-### Configuration
+## Configuration
 
 Update the settings.py file with your configuration. Key settings include:
 
@@ -64,7 +63,7 @@ Update the settings.py file with your configuration. Key settings include:
 - REST_FRAMEWORK
 - SIMPLE_JWT
 
-### API Endpoints
+## API Endpoints
 
 1. Authentication
 
@@ -82,7 +81,7 @@ Update the settings.py file with your configuration. Key settings include:
 
 5. Caldendar
 
-### Contributing
+## Contributing
 
 - Fork the repository
 - Create a new branch (`git checkout -b feature-branch`)
@@ -91,11 +90,11 @@ Update the settings.py file with your configuration. Key settings include:
 - Push to the branch (`git push origin feature-branch`)
 - Create a new Pull Request
 
-### License
+## License
 
 This project is licensed under the MIT License.
 
-### Contact
+## Contact
 
 Developper Fouad El Azbi &copy; 2024,
 For any inquiries, please contact [DevelopperEAF@gmail.com].
