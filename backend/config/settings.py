@@ -1,10 +1,9 @@
-"""
-Django settings for config project.
-"""
+""" Django settings for config project. """
 # import djongo.base
 from datetime import timedelta
 from pathlib import Path
 import os
+import dj_database_url
 from dotenv import load_dotenv
 
 
@@ -14,14 +13,19 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY_APP')
+# SECRET_KEY for Django (keep this secret in production!)
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG_APP') == 'True'
+# DEBUG mode (False for production, True for development)
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+# Allowed hosts for the application
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+# Configure CORS
+CORS_ALLOWED_ORIGINS = [
+    f"http://{host.strip()}" for host in ALLOWED_HOSTS if host.strip()]
 
+# Custom user model and authentication backends
 AUTH_USER_MODEL = 'users.User'
 AUTHENTICATION_BACKENDS = [
     'users.authentication.UserBackend',
@@ -30,8 +34,9 @@ AUTHENTICATION_BACKENDS = [
 
 LOGIN_URL = '/auth/login'
 LOGOUT_URL = '/auth/login'
-
 APPEND_SLASH = True
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 # Application definition
 INSTALLED_APPS = [
@@ -54,6 +59,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -83,32 +90,52 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# Database configuration
+if not DEBUG:
+    print("Connected to Database online ...")
+    # postgresql
+    # DATABASES = {
+    #     'default': {
+    #         'ENGINE': 'django.db.backends.postgresql',
+    #         'NAME': os.getenv('DB_NAME'),
+    #         'USER': os.getenv('USER_SERVER_POSTG'),
+    #         'PASSWORD': os.getenv('PASSWORD_SERVER'),
+    #         'HOST': os.getenv('HOST_APP'),
+    #         'PORT': os.getenv('PORT_APP_POSTG')
+    #     }
+    # }
 
-# Database SQLite
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    # MySQL
+    # DATABASES = {
+    #     'default': {
+    #         'ENGINE': 'django.db.backends.mysql',
+    #         'NAME': os.getenv('DB_NAME'),
+    #         'USER': os.getenv('USER_SERVER_MYSQL'),
+    #         'PASSWORD': os.getenv('PASSWORD_SERVER'),
+    #         'HOST': os.getenv('HOST_APP'),
+    #         # 'PORT': 3306
+    #         'PORT': os.getenv('PORT_APP_MYSQL')
+    #     }
+    # }
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASES_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    print("Connected to sqlite ...")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
-# MySQL
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': os.getenv('DB_NAME'),
-#         'USER': os.getenv('USER_SERVER_MYSQL'),
-#         'PASSWORD': os.getenv('PASSWORD_SERVER'),
-#         'HOST': os.getenv('HOST_APP'),
-#         # 'PORT': 3306
-#         'PORT': os.getenv('PORT_APP_MYSQL')
-#     }
-# }
-
-
+# Mongodb
 # Patch to handle NotImplementedError
 # original_close = djongo.base.DatabaseWrapper._close
-
 
 # def safe_close(self):
 #     try:
@@ -116,10 +143,8 @@ DATABASES = {
 #     except NotImplementedError:
 #         pass
 
-
 # djongo.base.DatabaseWrapper._close = safe_close
 
-# Mongodb
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'djongo',
@@ -135,18 +160,6 @@ DATABASES = {
 #     'tls': True,
 #     'tlsCAFile': certifi.where(),
 # },
-#     }
-# }
-
-# postgresql
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('DB_NAME'),
-#         'USER': os.getenv('USER_SERVER_POSTG'),
-#         'PASSWORD': os.getenv('PASSWORD_SERVER'),
-#         'HOST': os.getenv('HOST_APP'),
-#         'PORT': os.getenv('PORT_APP_POSTG')
 #     }
 # }
 
@@ -167,9 +180,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/5.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -179,25 +190,25 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Icons)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 # Static files (Images, Videos, Files)
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
+
+# Define the root directories for static and media files
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 # Configure JWT authentication settings
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': False,
+    'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
 
     'ALGORITHM': 'HS256',
@@ -207,7 +218,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
-
+    'UPDATE_LAST_LOGIN': True,
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
 
@@ -221,12 +232,11 @@ SIMPLE_JWT = {
 # Configure Django REST Framework authentication settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': [
-        # 'rest_framework.permissions.IsAuthenticated',
-    ],
-
-
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }

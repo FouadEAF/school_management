@@ -5,9 +5,7 @@ from django.db import models
 
 class UserManager(BaseUserManager):
     def create_user(self, username, cnie, password=None, **extra_fields):
-        """
-        Create and return a regular user with a username and cnie.
-        """
+        """ Create and return a regular user with a username and cnie. """
         if not username:
             raise ValueError('The username field must be set')
         if not cnie:
@@ -19,9 +17,7 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, username, cnie, password=None, **extra_fields):
-        """
-        Create and return a superuser with a username and cnie.
-        """
+        """ Create and return a superuser with a username and cnie. """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
