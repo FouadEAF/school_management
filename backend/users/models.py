@@ -32,6 +32,8 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     cnie = models.CharField(max_length=15, unique=True)
     role = models.CharField(max_length=50)
+    security_question = models.CharField(max_length=255, blank=True, null=True)
+    security_answer = models.CharField(max_length=255, blank=True, null=True)
     objects = UserManager()
 
     USERNAME_FIELD = 'username'

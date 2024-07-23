@@ -1,6 +1,6 @@
 from django.db import models
 
-from api.models import Helpers
+from config.api.models import Helpers
 from school.models import Seance
 
 
