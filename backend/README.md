@@ -20,19 +20,16 @@ Take a look on code
 
 ### Prerequisites
 
-- Python 3.8+
-- Django 3.2+
-- Django REST Framework
-- SimpleJWT
+- Python 3.12+
+- Django
 
 ### Installation
 
 1. Clone the repository:
 
-   ```
    > git clone https://github.com/FouadEAF/schoolManagement.git
+
    > cd schoolManagement
-   ```
 
 2. Create and activate a virtual environment:
 
@@ -70,11 +67,12 @@ Update the settings.py file with your configuration. Key settings include:
 ### API Endpoints
 
 1. Authentication
-   POST /api/v1/auth/login/: User login
-   GET /api/v1/auth/logout/: User logout
-   POST /api/v1/auth/register/: User registration
-   POST /api/v1/auth/password-reset/: Request password reset
-   POST /api/v1/auth/password-reset-confirm/: Confirm password reset
+
+   - POST /api/v1/auth/login/: User login
+   - GET /api/v1/auth/logout/: User logout
+   - POST /api/v1/auth/register/: User registration
+   - POST /api/v1/auth/password-reset/: Request password reset
+   - POST /api/v1/auth/password-reset-confirm/: Confirm password reset
 
 2. School
 
@@ -86,12 +84,12 @@ Update the settings.py file with your configuration. Key settings include:
 
 ### Contributing
 
-Fork the repository
-Create a new branch (git checkout -b feature-branch)
-Make your changes
-Commit your changes (git commit -m 'Add some feature')
-Push to the branch (git push origin feature-branch)
-Create a new Pull Request
+- Fork the repository
+- Create a new branch (`git checkout -b feature-branch`)
+- Make your changes
+- Commit your changes (`git commit -m 'Add some feature`)
+- Push to the branch (`git push origin feature-branch`)
+- Create a new Pull Request
 
 ### License
 
@@ -99,4 +97,5 @@ This project is licensed under the MIT License.
 
 ### Contact
 
+Developper Fouad El Azbi &copy; 2024,
 For any inquiries, please contact [DevelopperEAF@gmail.com].
