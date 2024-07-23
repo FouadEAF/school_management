@@ -32,13 +32,14 @@ db.sqlite3
 *.pdb
 *.pyo
 .DS_Store
+*/.DS_Store
+**/.DS_Store
 
 # If using SQLite3 database files
 *.sqlite3
 
 # Django migrations
-migrations/*
-migrations/*.py
+*/migrations/
 
 # PyInstaller
 # Usually these files are written by a python script from a template

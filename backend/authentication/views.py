@@ -1,25 +1,20 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.utils.timezone import make_aware
-import random
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-from rest_framework.decorators import api_view
-from django.utils.http import urlsafe_base64_encode
-from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.hashers import check_password
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.encoding import force_bytes
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.http import JsonResponse
 from django.views import View
-from django.contrib.auth import authenticate
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+
 from datetime import datetime, timedelta
 import json
-from django.http import JsonResponse
-from django.contrib.auth import login as auth_login, logout as auth_logout
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from django.contrib.auth.decorators import login_required
+import random
 
 from authentication.models import PasswordResetCode
 from users.models import User
@@ -27,10 +22,11 @@ from users.forms import SignUpForm
 
 
 @csrf_exempt
+@permission_classes([IsAuthenticated])
 def signup_view(request):
     """Signup new user"""
-    if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
+    # if not request.user.is_authenticated:
+    #     return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
 
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -50,7 +46,7 @@ def signup_view(request):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
-    """Login - to application"""
+    """Login to application"""
 
     def post(self, request, *args, **kwargs):
         try:
@@ -124,7 +120,7 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-    """Logout """
+    """Logout"""
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
@@ -148,6 +144,7 @@ class LogoutView(APIView):
             }, status=401)
 
 
+@permission_classes([IsAuthenticated])
 class AboutMeView(View):
     """About me - get all information about user"""
 
@@ -161,18 +158,18 @@ class AboutMeView(View):
             'idUser': user.id,
             'username': user.username,
             'cnie': user.cnie,
-            # Example: Get first group name if any
             'Role': user.groups.first().name if user.groups.exists() else user.role,
         }
         return JsonResponse({'success': True, 'user': user_data}, status=200)
 
 
+@permission_classes([IsAuthenticated])
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
+        # if not request.user.is_authenticated:
+        #     return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
@@ -198,46 +195,52 @@ class ChangePasswordView(APIView):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def refresh_token(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
+    # if not request.user.is_authenticated:
+    #     return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
 
-    # Extract the refresh token from the request cookies
     refresh = request.COOKIES.get('refresh_token', None)
 
     if refresh is None:
         return Response({'success': False, 'message': "Refresh token is required"}, status=400)
 
     try:
-        # Create a RefreshToken instance
         refresh_token = RefreshToken(refresh)
-        # Generate a new access token
         new_access_token = refresh_token.access_token
-        # Return the new access token
-        return Response({
+
+        refresh_token_lifetime = datetime.now() + timedelta(days=1)
+
+        refresh_token.set_jti()
+        # refresh_token.set_exp(lifetime=refresh_token_lifetime)
+        refresh_token.set_exp()
+
+        response = Response({
             'success': True,
-            "access_token": str(new_access_token)
+            "access_token": str(new_access_token),
+            # "refresh_token": str(refresh_token),
         })
+
+        response.set_cookie('refresh_token', str(refresh_token), httponly=True)
+
+        return response
     except TokenError:
-        # Handle expired or otherwise invalid refresh tokens
         return Response({'success': False, 'message': "Refresh token is expired or invalid"}, status=400)
     except InvalidToken:
-        # Handle invalid tokens
         return Response({'success': False, 'message': "Invalid token"}, status=400)
     except Exception as e:
-        # Handle any other exceptions
         return Response({'success': False, 'message': str(e)}, status=400)
 
 
-# Dictionary to store activation codes and their expiration time in RAM
 activation_codes = {}
 
 
 @method_decorator(csrf_exempt, name='dispatch')
+@permission_classes([IsAuthenticated])
 class PasswordResetRequestView(View):
     def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
+        # if not request.user.is_authenticated:
+        #     return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
 
         try:
             data = json.loads(request.body)
@@ -251,101 +254,69 @@ class PasswordResetRequestView(View):
             return JsonResponse({'success': False, 'message': 'Username and cnie are required'}, status=401)
 
         try:
-            user = User.objects.get(
-                username=username, cnie=cnie)
+            user = User.objects.get(username=username, cnie=cnie)
         except User.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'User with this username and cnie does not exist'}, status=404)
 
-        # Check if there is an existing activation code for the user
         existing_code = PasswordResetCode.objects.filter(user=user).first()
 
-        # Generate a new random 4-digit code
-        # Generate a new random code
         codeActivation = str(random.randint(1000, 9999))
-        # Set expiration time (e.g., 30 minutes from now)
-        expiration_time = make_aware(
-            datetime.now() + timedelta(minutes=10))  # Set new expiration time
+        expiration_time = make_aware(datetime.now() + timedelta(minutes=10))
 
         if existing_code:
-            # If there's an existing code, update it instead of creating a new one
-
-            # Update existing code with new values
             existing_code.activation_code = codeActivation
             existing_code.expires_at = expiration_time
             existing_code.save()
         else:
-
-            # Store activation code in RAM (optional, if needed for immediate comparison)
             activation_codes[user.id] = {
                 'codeActivation': codeActivation,
                 'expires_at': expiration_time
             }
 
-            # Store activation code in database
             PasswordResetCode.objects.create(
                 user=user,
                 activation_code=codeActivation,
                 expires_at=expiration_time
             )
 
-        # Notify admin or provide activation code to the user securely
         return JsonResponse({'success': True, 'codeActivation': codeActivation, 'expires_at': expiration_time}, status=200)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
+@permission_classes([IsAuthenticated])
 class PasswordResetConfirmView(APIView):
     def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
+        # if not request.user.is_authenticated:
+        #     return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
 
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
             return Response({'success': False, 'message': 'Invalid JSON'}, status=400)
 
-        activationCode = data.get('activationCode')
-        password = data.get('password')
-        password2 = data.get('password2')
+        codeActivation = data.get('codeActivation')
+        new_password = data.get('new_password')
+        new_password_confirm = data.get('new_password_confirm')
 
-        if not activationCode:
-            return Response({'success': False, 'message': 'Activation code is required'}, status=400)
+        if not codeActivation or not new_password or not new_password_confirm:
+            return Response({'success': False, 'message': 'All fields are required'}, status=400)
 
-        if not password or not password2:
-            return Response({'success': False, 'message': 'Password and password confirmation are required'}, status=400)
-
-        if password != password2:
-            return Response({'success': False, 'message': 'Passwords do not match'}, status=400)
+        if new_password != new_password_confirm:
+            return Response({'success': False, 'message': 'New passwords do not match'}, status=400)
 
         try:
-            user_id = request.user.id  # Assuming user is authenticated and user ID is available
-            stored_data = activation_codes.get(user_id)
+            password_reset_code = PasswordResetCode.objects.get(
+                user=request.user, activation_code=codeActivation)
+        except PasswordResetCode.DoesNotExist:
+            return Response({'success': False, 'message': 'Invalid activation code'}, status=400)
 
-            if stored_data:
-                stored_code = stored_data.get('codeActivation')
-                expiration_time = stored_data.get('expires_at')
+        if password_reset_code.expires_at < make_aware(datetime.now()):
+            return Response({'success': False, 'message': 'Activation code has expired'}, status=400)
 
-                # Check if code is expired
-                if expiration_time < datetime.now():
-                    # Remove expired code from RAM
-                    del activation_codes[user_id]
-                    return Response({'success': False, 'message': 'Activation code has expired'}, status=400)
+        user = password_reset_code.user
+        user.set_password(new_password)
+        user.save()
 
-                # Validate activation code
-                if stored_code == activationCode:
-                    # Code is valid, proceed with password reset
-                    user = User.objects.get(pk=user_id)
-                    user.set_password(password)
-                    user.save()
+        password_reset_code.delete()
 
-                    # Remove activation code from RAM after successful use
-                    del activation_codes[user_id]
-
-                    return Response({'success': True, 'message': 'Password has been reset successfully'}, status=200)
-                else:
-                    return Response({'success': False, 'message': 'Invalid activation code'}, status=400)
-
-            else:
-                return Response({'success': False, 'message': 'No activation code found'}, status=400)
-
-        except User.DoesNotExist:
-            return Response({'success': False, 'message': 'User not found'}, status=404)
+        return Response({'success': True, 'message': 'Password reset successfully'}, status=200)
