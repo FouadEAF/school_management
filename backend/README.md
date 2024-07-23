@@ -35,8 +35,8 @@ Take a look on code
 
    > python -m venv venv
 
-   - On Mac, use `source venv/bin/activate`
-   - On Windows, use `./venv/Scripts/activate`
+- On Mac, use `source venv/bin/activate`
+- On Windows, use `./venv/Scripts/activate`
 
 3. Install the dependencies:
 
@@ -52,6 +52,7 @@ Take a look on code
    > python manage.py createsuperuser
 
 6. Run the development server:
+
    > python manage.py runserver
 
 ## Configuration
