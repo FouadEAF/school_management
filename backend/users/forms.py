@@ -6,24 +6,24 @@ from django.contrib.auth.models import Group
 
 
 class UserUpdateForm(UserChangeForm):
-    """ Form to create new user """
+    """ Form to update user information """
     is_superuser = forms.BooleanField(
         label='Superuser status', required=False, initial=False)
     is_staff = forms.BooleanField(
         label='Staff status', required=False, initial=False)
     role = forms.CharField(max_length=50, required=True)
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
 
     class Meta(UserChangeForm.Meta):
         model = User
-        fields = ('username', 'cnie', 'role', 'is_superuser',
-                  'is_staff', 'security_question', 'security_answer')
+        fields = ('username', 'first_name', 'last_name', 'cnie', 'email', 'role', 'is_superuser',
+                  'is_staff')
 
     def __init__(self, *args, **kwargs):
-        # Extract instance and pass it to the form
         self.instance = kwargs.get('instance', None)
         super().__init__(*args, **kwargs)
 
-        # Remove username uniqueness check if instance is provided (i.e., for updates)
         if self.instance and self.instance.pk:
             self.fields['username'].required = False
             self.fields['username'].validators = []
@@ -45,34 +45,34 @@ class UserUpdateForm(UserChangeForm):
 
 
 class SignUpForm(UserCreationForm):
-    """ Form to create new user """
+    """ Form to create a new user """
+    email = forms.EmailField(required=True)
     is_superuser = forms.BooleanField(
         label='Superuser status', required=False, initial=False)
     is_staff = forms.BooleanField(
         label='Staff status', required=False, initial=False)
     role = forms.CharField(max_length=50, required=True)
-    security_question = forms.CharField(max_length=255, required=True)
-    security_answer = forms.CharField(max_length=255, required=True)
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('username', 'cnie', 'role', 'is_superuser',
-                  'is_staff', 'security_question', 'security_answer')
+        fields = ('username', 'first_name', 'last_name', 'cnie', 'email', 'role', 'is_superuser',
+                  'is_staff')
 
     def save(self, commit=True):
         user = super().save(commit=False)
+        user.first_name = self.cleaned_data.get('first_name')
+        user.last_name = self.cleaned_data.get('last_name')
+        user.email = self.cleaned_data.get('email')
         user.is_superuser = self.cleaned_data.get('is_superuser', False)
         user.is_staff = self.cleaned_data.get('is_staff', False)
 
-        # Save the user instance to get an ID
         if commit:
             user.save()
 
-        # Get or create the group based on the 'role' field
         role = self.cleaned_data.get('role')
         group, _ = Group.objects.get_or_create(name=role)
-
-        # Add the user to the group
         user.groups.add(group)
 
         return user
@@ -81,4 +81,4 @@ class SignUpForm(UserCreationForm):
 class UserChangeForm(UserChangeForm):
     class Meta:
         model = User
-        fields = ('username', 'cnie')
+        fields = ('username', 'first_name', 'last_name', 'cnie')
