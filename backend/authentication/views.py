@@ -19,6 +19,23 @@ from authentication.utils import get_tokens_for_user
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+# from django.contrib.auth.hashers import check_password
+# from datetime import datetime, timedelta
+# from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+# from django.contrib.auth import authenticate
+# from django.contrib.auth import login as auth_login, logout as auth_logout
+# # from django.http import Response
+# from rest_framework.response import Response
+# from authentication.utils import get_tokens_for_user
+# from users.forms import SignUpForm, UserUpdateForm
+# import json
+# from rest_framework.views import APIView
+# from django.views.decorators.csrf import csrf_exempt
+# from django.utils.decorators import method_decorator
+# from users.models import User
+# from rest_framework.permissions import IsAuthenticated, AllowAny
+# from rest_framework_simplejwt.authentication import JWTAuthentication
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateUser(APIView):
@@ -38,24 +55,6 @@ class CreateUser(APIView):
             return Response({'success': True, 'message': 'User created successfully'}, status=201)
         else:
             return Response({'success': False, 'message': form.errors}, status=400)
-
-
-# from django.contrib.auth.hashers import check_password
-# from datetime import datetime, timedelta
-# from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-# from django.contrib.auth import authenticate
-# from django.contrib.auth import login as auth_login, logout as auth_logout
-# # from django.http import Response
-# from rest_framework.response import Response
-# from authentication.utils import get_tokens_for_user
-# from users.forms import SignUpForm, UserUpdateForm
-# import json
-# from rest_framework.views import APIView
-# from django.views.decorators.csrf import csrf_exempt
-# from django.utils.decorators import method_decorator
-# from users.models import User
-# from rest_framework.permissions import IsAuthenticated, AllowAny
-# from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -256,11 +255,11 @@ class RefreshToken(APIView):
             return Response({'success': False, 'message': "Refresh token is required"}, status=400)
 
         try:
-            refresh_token = AccessToken(refresh)
-            new_access_token = refresh_token.access_token
+            new_access_token = AccessToken(refresh)
+            # new_access_token = refresh_token.access_token
             access_token_lifetime = datetime.now() + timedelta(minutes=60)
 
-            new_refresh_token = RefreshToken.for_user(refresh_token.user)
+            new_refresh_token = RefreshToken.for_user(new_access_token.user)
             refresh_token_lifetime = datetime.now() + timedelta(days=1)
 
             response_data = {
