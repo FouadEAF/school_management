@@ -12,6 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
+      debugShowCheckedModeBanner: true,
       title: 'School management',
       // theme: ,
       home: LoginPage(),
