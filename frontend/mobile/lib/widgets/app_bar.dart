@@ -1,16 +1,30 @@
 // ignore_for_file: prefer_const_constructors
 
+// import 'package:flutter/material.dart';
+// import 'package:mobile/constants/colors.dart';
+
+// AppBar customAppBar() {
+//   return AppBar(
+//     title: const Text(
+//       'Django Todos',
+//       style: TextStyle(color: Color(0xFFffffff)),
+//     ),
+//     elevation: 0.0,
+//     backgroundColor: darkBlue,
+//   );
+// }
+
 import 'package:flutter/material.dart';
 
 class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
-  final Widget leading;
-  final List<Widget> actions;
+  final Widget? leading;
+  final List<Widget>? actions;
 
   MyAppBar({
     required this.title,
-    required this.leading,
-    required this.actions,
+    this.leading,
+    this.actions,
   });
 
   @override
@@ -26,7 +40,7 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  leading,
+                  leading ?? SizedBox.shrink(),
                   Text(
                     title,
                     style: TextStyle(
@@ -34,7 +48,9 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
                       fontSize: 20.0,
                     ),
                   ),
-                  Row(children: actions),
+                  Row(
+                    children: actions ?? [],
+                  ),
                 ],
               ),
             ],

@@ -1,9 +1,14 @@
-// ignore_for_file: file_names, prefer_const_constructors, prefer_const_literals_to_create_immutables
+// ignore_for_file: file_names, prefer_const_constructors, prefer_const_literals_to_create_immutables, sort_child_properties_last
 
 import 'package:flutter/material.dart';
+import 'package:mobile/authentication/constants/methods.dart'; // Ensure this import is correct and necessary
+// import 'package:mobile/authentication/helpers/login_helper.dart'; // Ensure this import is correct
 
 class LoginContainer extends StatelessWidget {
   LoginContainer({super.key});
+
+  final TextEditingController txtUsername = TextEditingController();
+  final TextEditingController txtPassword = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -15,13 +20,14 @@ class LoginContainer extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(50.0, 20.0, 50.0, 20.0),
           child: TextField(
             autofocus: true,
+            controller: txtUsername,
             decoration: InputDecoration(
-              labelText: 'Username',
+              labelText: 'Username or email',
               labelStyle: TextStyle(
                 color: Colors.blue, // Change the color of the label text
                 fontSize: 16.0, // Change the size of the label text
               ),
-              hintText: 'Enter your username',
+              hintText: 'Enter your username or email',
               hintStyle: TextStyle(
                 color: Colors.grey, // Change the color of the hint text
                 fontSize: 14.0, // Change the size of the hint text
@@ -58,6 +64,7 @@ class LoginContainer extends StatelessWidget {
         Padding(
           padding: EdgeInsets.fromLTRB(50.0, 20.0, 50.0, 20.0),
           child: TextField(
+            controller: txtPassword,
             obscureText:
                 true, // Ensures the text is obscured for password input
             decoration: InputDecoration(
@@ -102,7 +109,10 @@ class LoginContainer extends StatelessWidget {
         ),
         ElevatedButton(
           onPressed: () {
-            // Your login logic here
+            LoginHelper.postData(
+              username: txtUsername.text, // Access text property
+              password: txtPassword.text, // Access text property
+            );
           },
           child: Text(
             'Login',
