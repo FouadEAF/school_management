@@ -1,13 +1,17 @@
 // ignore_for_file: non_constant_identifier_names
 
-// import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:mobile/utils/api.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:mobile/widgets/box_dialogue.dart';
 
 class LoginHelper {
-  static Future<void> postData(
-      {required String username, required String password}) async {
+  static Future<void> postData({
+    required BuildContext context,
+    required String username,
+    required String password,
+  }) async {
     // Function to post data to backend
     try {
       http.Response res = await http.post(
@@ -24,6 +28,7 @@ class LoginHelper {
       if (res.statusCode == 200) {
         // Decode the JSON response
         var data = jsonDecode(res.body);
+
         print('Response data: $data');
 
         // For example, you can extract specific fields:
@@ -33,14 +38,15 @@ class LoginHelper {
         print("Failed to post data: ${res.statusCode}");
         // Optionally, decode the error response
         var data = jsonDecode(res.body);
+        showNotification(context, 'Error', data['message']);
         print('Error response data: ${data['message']}');
       }
     } catch (e) {
       print("Error: $e");
+      showNotification(context, 'Exception', e.toString());
     }
   }
 }
-
 
 // class HelperFunction {
 //   Future<void> postData({String title = "", String desc = ""}) async {

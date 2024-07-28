@@ -60,40 +60,8 @@ class _MyAppState extends State<MyApp> {
       routes: {
         '/register': (context) => RegisterPage(),
         '/resetPassword': (context) => ResetPasswordPage(),
+        '/resetPasswordConfirm': (context) => ResetPasswordConfirmPage(),
       },
     );
   }
 }
-
-
-// import 'package:flutter/material.dart';
-// import 'package:mobile/authentication/pages/login.dart';
-// import 'package:mobile/utils/theme.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-
-// void main() {
-//   runApp(const MyApp());
-// }
-
-// bool isDark = true;
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-
-//   // This widget is the root of your application.
-//   @override
-//   Widget build(BuildContext context) {
-//     bool isDark =
-//         true; // Or determine this value based on user preference or system settings
-
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: true,
-//       title: 'School Management',
-//       theme: isDark ? DarkMode() : LightMode(),
-//       home: LoginPage(),
-//       routes: {
-//         // '/register': (context) => RegisterPage(),
-//       },
-//     );
-//   }
-// }

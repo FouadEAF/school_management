@@ -23,8 +23,8 @@ class _LoginPageState extends State<LoginPage> {
           const Padding(padding: EdgeInsets.only(top: 50.0)),
           RichText(
             text: TextSpan(
-              text: 'Password forget? ',
-              style: TextStyle(color: Colors.black),
+              text: 'Password forgotten? ',
+              style: Theme.of(context).textTheme.bodyMedium,
               children: <TextSpan>[
                 TextSpan(
                   text: 'Reset',
@@ -42,7 +42,7 @@ class _LoginPageState extends State<LoginPage> {
           RichText(
             text: TextSpan(
               text: 'You don\'t have an account? ',
-              style: TextStyle(color: Colors.black),
+              style: Theme.of(context).textTheme.bodyMedium,
               children: <TextSpan>[
                 TextSpan(
                   text: 'Click here',
