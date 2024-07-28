@@ -24,9 +24,9 @@ final ThemeData LightTheme = ThemeData(
 
   appBarTheme: const AppBarTheme(
     backgroundColor: Color(0xffbfe0f8),
-    iconTheme: IconThemeData(color: Colors.white),
+    iconTheme: IconThemeData(color: Color(0xff0d2a44)),
     titleTextStyle: TextStyle(
-        color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+        color: Color(0xff0d2a44), fontSize: 20, fontWeight: FontWeight.bold),
     centerTitle: true,
   ),
   //================================elevatedButtonTheme================================
