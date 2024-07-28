@@ -23,6 +23,24 @@ class _LoginPageState extends State<LoginPage> {
           const Padding(padding: EdgeInsets.only(top: 50.0)),
           RichText(
             text: TextSpan(
+              text: 'Password forget? ',
+              style: TextStyle(color: Colors.black),
+              children: <TextSpan>[
+                TextSpan(
+                  text: 'Reset',
+                  style: TextStyle(
+                      color: Colors.blue, decoration: TextDecoration.underline),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      Navigator.pushNamed(context, '/resetPassword');
+                    },
+                ),
+              ],
+            ),
+          ),
+          const Padding(padding: EdgeInsets.only(top: 30.0)),
+          RichText(
+            text: TextSpan(
               text: 'You don\'t have an account? ',
               style: TextStyle(color: Colors.black),
               children: <TextSpan>[

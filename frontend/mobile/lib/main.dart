@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/authentication/pages/forgetPassword.dart';
 import 'package:mobile/authentication/pages/login.dart';
 import 'package:mobile/authentication/pages/registre.dart';
 import 'package:mobile/utils/theme.dart';
@@ -58,6 +59,7 @@ class _MyAppState extends State<MyApp> {
       home: LoginPage(), //(onThemeToggle: _toggleThemeMode),
       routes: {
         '/register': (context) => RegisterPage(),
+        '/resetPassword': (context) => ResetPasswordPage(),
       },
     );
   }
