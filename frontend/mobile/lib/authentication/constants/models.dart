@@ -1,4 +1,6 @@
-class UserModel {
+// ignore_for_file: non_constant_identifier_names
+
+class CreateUser {
   String username;
   String firstName;
   String lastName;
@@ -7,8 +9,11 @@ class UserModel {
   String password1;
   String password2;
   String role;
+  bool is_superuser;
+  bool is_active;
+  bool is_staff;
 
-  UserModel({
+  CreateUser({
     required this.username,
     required this.firstName,
     required this.lastName,
@@ -17,18 +22,24 @@ class UserModel {
     required this.password1,
     required this.password2,
     required this.role,
+    this.is_superuser = false,
+    this.is_active = true,
+    this.is_staff = false,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      username: json['username'],
-      firstName: json['first_name'],
-      lastName: json['last_name'],
-      cnie: json['cnie'],
-      email: json['email'],
-      password1: json['password1'],
-      password2: json['password2'],
-      role: json['role'],
+  factory CreateUser.fromJson(Map<String, dynamic> json) {
+    return CreateUser(
+      username: json['username'] ?? '',
+      firstName: json['first_name'] ?? '',
+      lastName: json['last_name'] ?? '',
+      cnie: json['cnie'] ?? '',
+      email: json['email'] ?? '',
+      password1: json['password1'] ?? '',
+      password2: json['password2'] ?? '',
+      role: json['role'] ?? '',
+      is_superuser: json['is_superuser'] ?? false,
+      is_active: json['is_active'] ?? true,
+      is_staff: json['is_staff'] ?? false,
     );
   }
 
@@ -42,6 +53,9 @@ class UserModel {
       'password1': password1,
       'password2': password2,
       'role': role,
+      'is_superuser': is_superuser,
+      'is_active': is_active,
+      'is_staff': is_staff,
     };
   }
 }
@@ -55,19 +69,63 @@ class Login {
     required this.password,
   });
 
-  // Factory constructor to create a Login instance from a JSON map
   factory Login.fromJson(Map<String, dynamic> json) {
     return Login(
-      username: json['username'],
-      password: json['password'],
+      username: json['username'] ?? '',
+      password: json['password'] ?? '',
     );
   }
 
-  // Method to convert a Login instance to a JSON map
   Map<String, dynamic> toJson() {
     return {
       'username': username,
       'password': password,
+    };
+  }
+}
+
+class ResetPassword {
+  String email;
+
+  ResetPassword({required this.email});
+
+  factory ResetPassword.fromJson(Map<String, dynamic> json) {
+    return ResetPassword(
+      email: json['email'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'email': email,
+    };
+  }
+}
+
+class ResetPasswordConfirm {
+  String resetCode;
+  String newPassword;
+  String confirmPassword;
+
+  ResetPasswordConfirm({
+    required this.resetCode,
+    required this.newPassword,
+    required this.confirmPassword,
+  });
+
+  factory ResetPasswordConfirm.fromJson(Map<String, dynamic> json) {
+    return ResetPasswordConfirm(
+      resetCode: json['reset_code'] ?? '',
+      newPassword: json['new_password'] ?? '',
+      confirmPassword: json['confirm_password'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'reset_code': resetCode,
+      'new_password': newPassword,
+      'confirm_password': confirmPassword,
     };
   }
 }

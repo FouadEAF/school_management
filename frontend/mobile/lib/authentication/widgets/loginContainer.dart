@@ -48,9 +48,8 @@ class LoginContainer extends StatelessWidget {
           height: 10.0,
         ),
         ElevatedButton(
-          onPressed: () {
-            LoginHelper.postData(
-              context: context,
+          onPressed: () async {
+            await LoginHelper.postData(
               username: txtUsername.text,
               password: txtPassword.text,
             );

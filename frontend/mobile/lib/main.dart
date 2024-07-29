@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mobile/authentication/pages/forgetPassword.dart';
 import 'package:mobile/authentication/pages/login.dart';
 import 'package:mobile/authentication/pages/registre.dart';
+import 'package:mobile/school/pages/homa_page.dart';
 import 'package:mobile/utils/theme.dart';
+import 'package:mobile/widgets/box_dialogue.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -56,11 +58,17 @@ class _MyAppState extends State<MyApp> {
       theme: LightTheme,
       darkTheme: DarkTheme,
       themeMode: _themeMode,
+      navigatorKey: navigatorKey, // Set the navigator key
       home: LoginPage(), //(onThemeToggle: _toggleThemeMode),
       routes: {
+        // Authentication
+        'login': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
         '/resetPassword': (context) => ResetPasswordPage(),
         '/resetPasswordConfirm': (context) => ResetPasswordConfirmPage(),
+
+        // School
+        '/homepage': (context) => HomePage(),
       },
     );
   }

@@ -1,4 +1,5 @@
 """ Django settings for config project. """
+import certifi
 from datetime import timedelta
 from pathlib import Path
 import os
@@ -159,12 +160,20 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
 }
-
 # Config SMTP
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.example.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'your-email@example.com'
-EMAIL_HOST_PASSWORD = 'your-email-password'
-DEFAULT_FROM_EMAIL = 'webmaster@example.com'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'authentication.smtp_backend.SSLUnverifiedEmailBackend'
+# EMAIL_BACKEND = 'authentication.smtp.CustomEmailBackend'
+
+# MAILERSEND_SMTP_PORT = os.environ.get('EMAIL_PORT')
+# MAILERSEND_SMTP_USERNAME = os.environ.get('EMAIL_HOST_USER')
+# MAILERSEND_SMTP_HOST = os.environ.get('EMAIL_HOST')
+# MAILERSEND_SMTP_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
+EMAIL_PORT = os.environ.get('EMAIL_PORT')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
+EMAIL_USE_SSL = False  # Set to True if using port 465
+EMAIL_USE_TLS = True  # Set to False if using port 465

@@ -1,6 +1,6 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
-
 import 'package:flutter/material.dart';
+import 'package:mobile/authentication/constants/models.dart';
+import 'package:mobile/authentication/constants/methods.dart';
 
 class RegistreForm extends StatefulWidget {
   const RegistreForm({super.key});
@@ -20,6 +20,18 @@ class _RegistreFormState extends State<RegistreForm> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   String _selectedRole = 'Student';
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _cnieController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -175,9 +187,47 @@ class _RegistreFormState extends State<RegistreForm> {
               ),
               SizedBox(height: 20.0),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    // Add registration logic here
+                    CreateUser newUser = CreateUser(
+                      username: _usernameController.text,
+                      firstName: _firstNameController.text,
+                      lastName: _lastNameController.text,
+                      cnie: _cnieController.text,
+                      email: _emailController.text,
+                      password1: _passwordController.text,
+                      password2: _confirmPasswordController.text,
+                      role: _selectedRole,
+                    );
+
+                    // await RegistreHelper.postData(newUser);
+
+                    try {
+                      // Post data using the helper
+                      bool success = await RegistreHelper.postData(newUser);
+                      print('success===========>$success');
+
+                      if (success) {
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/login', // Replace with your named route
+                          (Route<dynamic> route) =>
+                              false, // This removes all the previous routes
+                        );
+                      } else {
+                        // Show error message if registration fails
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Registration failed. Please try again.')),
+                        );
+                      }
+                    } catch (e) {
+                      // Handle any errors that occur during the request
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('An error occurred: $e')),
+                      );
+                    }
                   }
                 },
                 child: Text('Register'),

@@ -1,6 +1,12 @@
+import smtplib
+import ssl
+from django.conf import settings
+from django.core.mail import EmailMessage, get_connection
+from django.core.mail import send_mail
+
 from .models import PasswordResetToken
 from django.utils.crypto import get_random_string
-from django.core.mail import send_mail
+
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from datetime import datetime, timedelta
@@ -45,6 +51,7 @@ class CreateUser(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
+            print('from mobile', data)
         except json.JSONDecodeError:
             return Response({'success': False, 'message': 'Invalid JSON'}, status=400)
 
@@ -317,21 +324,49 @@ class RequestPasswordReset(APIView):
 
         # Generate a temporary reset token
         reset_code = get_random_string(4)
-        print('reset_code========>', reset_code)
-        expires_at = datetime.datetime.now() + datetime.timedelta(minutes=5)
+        expires_at = datetime.now() + timedelta(minutes=5)
 
         # Save the reset token
         PasswordResetToken.objects.create(
             user=user, reset_code=reset_code, expires_at=expires_at)
 
         # Send the reset token to the user's email
-        send_mail(
-            'Password Reset Request from school management',
-            f'Your password reset code is: {reset_code}',
-            'no-reply@eaf.com',
-            [email],
-            fail_silently=False,
-        )
+        subject = 'Password Reset Request from school management'
+        recipient_list = [email]
+        from_email = 'no-reply@eaf.com'
+        message = f'Your password reset code is: {reset_code}'
+
+        send_mail(subject, message, from_email, recipient_list)
+
+        # send_mail(
+        #     'Password Reset Request from school management',
+        #     f'Your password reset code is: {reset_code}',
+        #     'no-reply@eaf.com',
+        #     [email],
+        #     fail_silently=False,
+        # )
+
+        # # Create an SSL context
+        # context = ssl.create_default_context()
+        # context.check_hostname = False
+        # context.verify_mode = ssl.CERT_NONE
+
+        # with get_connection(
+        #     host=settings.MAILERSEND_SMTP_HOST,
+        #     port=settings.MAILERSEND_SMTP_PORT,
+        #     username=settings.MAILERSEND_SMTP_USERNAME,
+        #     password=settings.MAILERSEND_SMTP_PASSWORD,
+        #     use_tls=True,
+        # ) as connection:
+        #     email = EmailMessage(
+        #         subject=subject,
+        #         body=message,
+        #         to=recipient_list,
+        #         from_email=from_email,
+        #         connection=connection
+        #     )
+        #     email.content_subtype = "html"  # Set the content type to HTML
+        #     email.send()
 
         return Response({'success': True, 'message': f'Password reset code sent to email {email}'}, status=200)
 

@@ -6,15 +6,15 @@ from .views import CreateUser, UpdateUser, LoginView, LogoutView, AboutMeView, C
 
 
 urlpatterns = [
-    path('registre/', CreateUser.as_view(), name='create_user'),
-    path('update/', UpdateUser.as_view(), name='update_user'),
-    path('login/', LoginView.as_view(), name='login'),
-    path('signout/', LogoutView.as_view(), name='signout'),
-    path('me/', AboutMeView.as_view(), name='about_me'),
-    path('change-password/', ChangePasswordView.as_view(), name='change_password'),
-    path('refresh/', RefreshToken.as_view(), name='refresh_token'),
-    path('password-reset/', RequestPasswordReset.as_view(), name='password_reset'),
-    path('password-reset-confirm/',
+    path('registre', CreateUser.as_view(), name='create_user'),
+    path('update', UpdateUser.as_view(), name='update_user'),
+    path('login', LoginView.as_view(), name='login'),
+    path('signout', LogoutView.as_view(), name='signout'),
+    path('me', AboutMeView.as_view(), name='about_me'),
+    path('change-password', ChangePasswordView.as_view(), name='change_password'),
+    path('refresh', RefreshToken.as_view(), name='refresh_token'),
+    path('password-reset', RequestPasswordReset.as_view(), name='password_reset'),
+    path('password-reset-confirm',
          PasswordResetConfirm.as_view(), name='password_reset'),
 
 
