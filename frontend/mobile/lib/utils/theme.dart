@@ -14,7 +14,7 @@ final ThemeData LightTheme = ThemeData(
 
 //===drawerTheme================================================================
   drawerTheme: const DrawerThemeData(
-      width: 300.0,
+      width: 200.0,
       backgroundColor: Color(0xffbfe0f8),
       elevation: 0.7,
       shadowColor: Color(0xff144266)),

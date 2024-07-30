@@ -59,7 +59,7 @@ class _MyAppState extends State<MyApp> {
       darkTheme: DarkTheme,
       themeMode: _themeMode,
       navigatorKey: navigatorKey, // Set the navigator key
-      home: LoginPage(), //(onThemeToggle: _toggleThemeMode),
+      home: HomePage(), //(onThemeToggle: _toggleThemeMode),
       routes: {
         // Authentication
         'login': (context) => LoginPage(),
