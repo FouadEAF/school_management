@@ -12,6 +12,7 @@ class Student(Helpers):
 
 class Absence(Helpers):
     status = models.CharField(max_length=20)
+    reason = models.CharField(max_length=200)
     student = models.ForeignKey(
         Student, on_delete=models.CASCADE, related_name='absences')
     seance = models.ForeignKey(
