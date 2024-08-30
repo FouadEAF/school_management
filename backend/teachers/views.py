@@ -1,20 +1,25 @@
 # views.py
-import json
+from .models import Matiere, Teacher, TeacherMatiere
 from django.forms import model_to_dict
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from rest_framework.parsers import JSONParser
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 from .models import Matiere, Teacher, Diplome, TeacherMatiere
-from django.shortcuts import get_object_or_404
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated
+from authentication.utils import APIAccessMixin
 
 
-@csrf_exempt
-def manage_teacher(request, id_teacher=None):
-    if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
+class ManageTeacherView(APIAccessMixin, APIView):
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
 
-    if request.method == 'GET':
+    def get(self, request, id_teacher=None):
         """Retrieve teachers"""
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
             if id_teacher:
                 # Retrieve a specific teacher and their diplomas
@@ -26,7 +31,7 @@ def manage_teacher(request, id_teacher=None):
                 ]
                 teacher_dict = model_to_dict(teacher)
                 teacher_dict['diplome'] = diplomes_list
-                return JsonResponse({'success': True, 'data': teacher_dict}, status=200)
+                return Response({'success': True, 'data': teacher_dict}, status=status.HTTP_200_OK)
             else:
                 # Retrieve all teachers with their diplomas
                 teachers = Teacher.objects.all()
@@ -40,18 +45,20 @@ def manage_teacher(request, id_teacher=None):
                     teacher_dict = model_to_dict(teacher)
                     teacher_dict['diplome'] = diplomes_list
                     teachers_list.append(teacher_dict)
-                return JsonResponse({'success': True, 'data': teachers_list}, status=200)
+                return Response({'success': True, 'data': teachers_list}, status=status.HTTP_200_OK)
 
         except Teacher.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'No Teacher found'}, status=404)
-
+            return Response({'success': False, 'message': 'No Teacher found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+            return Response({'success': False, 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    elif request.method == 'POST':
+    def post(self, request):
         """Add new teacher"""
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
-            data = json.loads(request.body)
+            data = request.data
 
             diplom_data = data.pop('diplome', [])
             full_name = data.get('full_name', '')
@@ -59,13 +66,10 @@ def manage_teacher(request, id_teacher=None):
             telephone = data.get('telephone', '')
             date_admission = data.get('date_admission', '')
             date_demission = data.get('date_demission', '')
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
 
-        try:
             # Check if a teacher with the same name or CNIE already exists
             if Teacher.objects.filter(cnie=cnie, full_name=full_name).exists():
-                return JsonResponse({'success': False, 'message': 'Teacher with the same name or CNIE already exists'}, status=400)
+                return Response({'success': False, 'message': 'Teacher with the same name or CNIE already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Create the teacher instance
             teacher = Teacher.objects.create(
@@ -77,124 +81,121 @@ def manage_teacher(request, id_teacher=None):
             )
 
             # Add diplomes to the teacher
-            if diplom_data:
-                for diplome_info in diplom_data:
-                    option = diplome_info.get('option')
-                    annee_obtenu = diplome_info.get('annee_obtenu')
-
-                    # Check if diplome already exists for the teacher
-                    diplome, created = Diplome.objects.get_or_create(
-                        option=option,
-                        annee_obtenu=annee_obtenu,
-                        teacher=teacher
-                    )
-            return JsonResponse({'success': True, 'message': 'Teacher added successfully'}, status=201)
+            for diplome_info in diplom_data:
+                option = diplome_info.get('option')
+                annee_obtenu = diplome_info.get('annee_obtenu')
+                Diplome.objects.get_or_create(
+                    option=option,
+                    annee_obtenu=annee_obtenu,
+                    teacher=teacher
+                )
+            return Response({'success': True, 'message': 'Teacher added successfully'}, status=status.HTTP_201_CREATED)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
+            return Response({'success': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'PUT':
+    def put(self, request, id_teacher=None):
         """Update a teacher"""
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
 
         try:
-            teacher_id = data.get('teacher_id')
-            if teacher_id is not None:
-                # Retrieve the teacher instance
-                teacher = Teacher.objects.get(pk=teacher_id)
+            data = request.data
+            # teacher_id = data.get('teacher_id')
+            if id_teacher is None:
+                return Response({'success': False, 'message': 'Teacher ID not provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-                # Update teacher fields if provided in the request
-                teacher.full_name = data.get('full_name', teacher.full_name)
-                teacher.cnie = data.get('cnie', teacher.cnie)
-                teacher.telephone = data.get('telephone', teacher.telephone)
-                teacher.date_admission = data.get(
-                    'date_admission', teacher.date_admission)
-                teacher.date_demission = data.get(
-                    'date_demission', teacher.date_demission)
-                teacher.save()
+            # Retrieve the teacher instance
+            teacher = Teacher.objects.get(pk=id_teacher)
 
-                # Update or create diplome instances associated with this teacher
-                diplome_data = data.get('diplome', [])
-                for diplome_info in diplome_data:
-                    option = diplome_info.get('option')
-                    annee_obtenu = diplome_info.get('annee_obtenu')
+            # Update teacher fields if provided in the request
+            teacher.full_name = data.get('full_name', teacher.full_name)
+            teacher.cnie = data.get('cnie', teacher.cnie)
+            teacher.telephone = data.get('telephone', teacher.telephone)
+            teacher.date_admission = data.get(
+                'date_admission', teacher.date_admission)
+            teacher.date_demission = data.get(
+                'date_demission', teacher.date_demission)
+            teacher.save()
 
-                    # Check if diplome already exists for the teacher
-                    diplome, created = Diplome.objects.get_or_create(
-                        teacher=teacher,
-                        option=option,
-                        defaults={'annee_obtenu': annee_obtenu}
-                    )
+            # Update or create diplome instances associated with this teacher
+            diplome_data = data.get('diplome', [])
+            for diplome_info in diplome_data:
+                option = diplome_info.get('option')
+                annee_obtenu = diplome_info.get('annee_obtenu')
 
-                    # Update diplome if it already exists
-                    if not created:
-                        diplome.annee_obtenu = annee_obtenu
-                        diplome.save()
+                # Check if diplome already exists for the teacher
+                diplome, created = Diplome.objects.get_or_create(
+                    teacher=teacher,
+                    option=option,
+                    defaults={'annee_obtenu': annee_obtenu}
+                )
 
-                return JsonResponse({'success': True, 'message': 'Teacher updated successfully'}, status=200)
-            else:
-                return JsonResponse({'success': False, 'message': 'Teacher ID not provided'}, status=400)
+                # Update diplome if it already exists
+                if not created:
+                    diplome.annee_obtenu = annee_obtenu
+                    diplome.save()
+
+            return Response({'success': True, 'message': 'Teacher updated successfully'}, status=status.HTTP_200_OK)
+        except Teacher.DoesNotExist:
+            return Response({'success': False, 'message': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
+            return Response({'success': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'DELETE':
+    def delete(self, request, id_teacher):
         """Delete a Teacher"""
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
-            deleted_teacher = Teacher.delete(id_teacher)
-            if deleted_teacher:
-                return JsonResponse({'success': True, 'message': 'Teacher deleted successfully'}, status=200)
-            else:
-                return JsonResponse({'success': False, 'message': 'Teacher not found'}, status=404)
+            teacher = Teacher.objects.get(pk=id_teacher)
+            teacher.delete()
+            return Response({'success': True, 'message': 'Teacher deleted successfully'}, status=status.HTTP_200_OK)
+        except Teacher.DoesNotExist:
+            return Response({'success': False, 'message': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
-
-    else:
-        return JsonResponse({'success': False, 'message': 'Method not allowed'}, status=405)
+            return Response({'success': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@csrf_exempt
-def manage_matiere(request, id_matiere=None):
-    if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'User is not authenticated'}, status=401)
-
-    if request.method == 'GET':
+class ManageMatiereView(APIView):
+    def get(self, request, id_matiere=None):
         """Retrieve Matieres"""
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
             if id_matiere:
                 # Retrieve a specific matiere
                 matiere = Matiere.objects.get(pk=id_matiere)
                 matiere_dict = model_to_dict(matiere)
-                return JsonResponse({'success': True, 'data': matiere_dict}, status=200)
+                return Response({'success': True, 'data': matiere_dict}, status=status.HTTP_200_OK)
             else:
                 # Retrieve all matieres
                 matieres = Matiere.objects.all()
                 matieres_list = [model_to_dict(matiere)
                                  for matiere in matieres]
-                return JsonResponse({'success': True, 'data': matieres_list}, status=200)
+                return Response({'success': True, 'data': matieres_list}, status=status.HTTP_200_OK)
 
         except Matiere.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Matiere not found'}, status=404)
+            return Response({'success': False, 'message': 'Matiere not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+            return Response({'success': False, 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    elif request.method == 'POST':
+    def post(self, request):
         """Add new Matiere"""
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
-            data = json.loads(request.body)
+            data = request.data
             matiere_name = data.get('matiere_name', '')
             duree_program = data.get('duree_program', '')
             teacher_id = data.get('teacher_id', 0)
 
             if not matiere_name or not duree_program:
-                return JsonResponse({'success': False, 'message': 'Missing matiere_name or duree_program'}, status=400)
+                return Response({'success': False, 'message': 'Missing matiere_name or duree_program'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Check if a teacher exists
-            try:
-                teacher = Teacher.objects.get(pk=teacher_id)
-            except Teacher.DoesNotExist:
-                return JsonResponse({'success': False, 'message': 'No teacher found'}, status=404)
+            teacher = Teacher.objects.get(pk=teacher_id)
 
             # Check if a matiere exists with the same name and duration
             matiere = Matiere.objects.filter(
@@ -202,52 +203,35 @@ def manage_matiere(request, id_matiere=None):
 
             # Check if a matiere with the same teacher already exists
             if matiere and TeacherMatiere.objects.filter(teacher=teacher, matiere=matiere).exists():
-                return JsonResponse({'success': False, 'message': 'Matiere with the same name and duration already exists for this teacher'}, status=400)
+                return Response({'success': False, 'message': 'Matiere with the same name and duration already exists for this teacher'}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Create the matiere instance
             if not matiere:
-                # Create the new Matiere if it does not exist
                 matiere = Matiere.objects.create(
-                    matiere_name=matiere_name,
-                    duree_program=duree_program,
-                )
+                    matiere_name=matiere_name, duree_program=duree_program)
 
-            # Create the TeacherMatiere relationship
-            TeacherMatiere.objects.create(
-                teacher=teacher,
-                matiere=matiere,
-            )
+            # Create TeacherMatiere association
+            TeacherMatiere.objects.create(teacher=teacher, matiere=matiere)
 
-            return JsonResponse({'success': True, 'message': 'Matiere added successfully'}, status=201)
-
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+            return Response({'success': True, 'message': 'Matiere added successfully'}, status=status.HTTP_201_CREATED)
+        except Teacher.DoesNotExist:
+            return Response({'success': False, 'message': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+            return Response({'success': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'PUT':
+    def put(self, request, id_matiere=None):
         """Update a Matiere"""
+        if not request.user.is_authenticated:
+            return Response({'success': False, 'message': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
-            data = json.loads(request.body)
-            matiere_id = data.get('matiere_id')
-            teacher_id = data.get('teacher_id')
-
-            if not matiere_id:
-                return JsonResponse({'success': False, 'message': 'Matiere ID not provided'}, status=400)
-
-            if not teacher_id:
-                return JsonResponse({'success': False, 'message': 'Teacher ID not provided'}, status=400)
-
-            # Check if a teacher exists
-            try:
-                teacher = Teacher.objects.get(pk=teacher_id)
-            except Teacher.DoesNotExist:
-                return JsonResponse({'success': False, 'message': 'No teacher found'}, status=404)
+            data = request.data
+            # matiere_id = data.get('matiere_id')
+            if not id_matiere:
+                return Response({'success': False, 'message': 'Matiere ID is required'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Retrieve the matiere instance
-            try:
-                matiere = Matiere.objects.get(pk=matiere_id)
-            except Matiere.DoesNotExist:
-                return JsonResponse({'success': False, 'message': 'Matiere not found'}, status=404)
+            matiere = Matiere.objects.get(pk=id_matiere)
 
             # Update matiere fields if provided in the request
             matiere.matiere_name = data.get(
@@ -256,34 +240,38 @@ def manage_matiere(request, id_matiere=None):
                 'duree_program', matiere.duree_program)
             matiere.save()
 
-            # Check if the teacher-matiere relationship exists
-            teacher_matiere, created = TeacherMatiere.objects.get_or_create(
-                teacher=teacher, matiere=matiere)
+            # Update or create TeacherMatiere association if teacher_id is provided
+            teacher_id = data.get('teacher_id')
+            if teacher_id:
+                teacher = Teacher.objects.get(pk=teacher_id)
+                # Update or create the teacher-matiere relationship
+                TeacherMatiere.objects.update_or_create(
+                    teacher=teacher,
+                    matiere=matiere,
+                    defaults={'teacher': teacher, 'matiere': matiere}
+                )
 
-            if not created:
-                teacher_matiere.save()
-
-            return JsonResponse({'success': True, 'message': 'Matiere updated successfully'}, status=200)
-
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+            return Response({'success': True, 'message': 'Matiere updated successfully'}, status=status.HTTP_200_OK)
+        except Matiere.DoesNotExist:
+            return Response({'success': False, 'message': 'Matiere not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Teacher.DoesNotExist:
+            return Response({'success': False, 'message': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+            return Response({'success': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'DELETE':
+    def delete(self, request, id_matiere=None):
         """Delete a Matiere"""
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
-            matiere = Matiere.delete(id_matiere)
-            if matiere:
-                return JsonResponse({'success': True, 'message': 'Matiere deleted successfully'}, status=200)
-            else:
-                return JsonResponse({'success': False, 'message': 'Matiere not found'}, status=404)
+            matiere = Matiere.objects.get(pk=id_matiere)
+            matiere.delete()
+            return Response({'success': True, 'message': 'Matiere deleted successfully'}, status=status.HTTP_200_OK)
+        except Matiere.DoesNotExist:
+            return Response({'success': False, 'message': 'Matiere not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
-
-    else:
-        return JsonResponse({'success': False, 'message': 'Method not allowed'}, status=405)
-
+            return Response({'success': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # ===========================================================================================
 # @csrf_exempt

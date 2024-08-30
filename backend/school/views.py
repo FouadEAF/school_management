@@ -1,21 +1,18 @@
 from django.core.exceptions import ValidationError
+from authentication.utils import APIAccessMixin
 from teachers.models import Matiere, Teacher
 import json
 from django.forms.models import model_to_dict
 from .models import Classe, Cohort, Material, SalleFormation, MaterialSalleFormation, Seance
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-
-from django.utils.decorators import method_decorator
 from .serializers import CohortSerializer
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class ManageCohortView(APIView):
+class ManageCohortView(APIAccessMixin, APIView):
     """Manage Cohort in school"""
     authentication_classes = [JWTAuthentication, SessionAuthentication]
     permission_classes = [IsAuthenticated]
@@ -94,20 +91,19 @@ class ManageCohortView(APIView):
             return Response({'success': False, 'message': str(e)}, status=400)
 
 
-@ csrf_exempt
-def manage_classe(request, id_classe=None):
-    if not request.user.is_authenticated:
-        return Response({'success': False, 'message': 'User is not authenticated'}, status=401)
+class ManageClasseView(APIAccessMixin, APIView):
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
 
-    if request.method == 'GET':
-        """Call a classe"""
+    def get(self, request, id_classe=None):
+        """Retrieve a classe or list of classes"""
         try:
             if id_classe:
                 classe = Classe.objects.get(pk=id_classe)
                 classe_dict = model_to_dict(classe)
                 return Response({'success': True, 'data': classe_dict}, status=200)
             else:
-                classes = Classe.get_all()
+                classes = Classe.objects.all()
                 classes_list = [model_to_dict(classe) for classe in classes]
                 return Response({'success': True, 'data': classes_list}, status=200)
         except Classe.DoesNotExist:
@@ -115,37 +111,31 @@ def manage_classe(request, id_classe=None):
         except Exception as e:
             return Response({'success': False, 'message': f'Error: {e}'}, status=500)
 
-    elif request.method == 'POST':
-        """Add new classe"""
+    def post(self, request):
+        """Add a new classe"""
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
             return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
 
         try:
-            # Validate the cohort
-            cohort_id = data['cohort']
+            cohort_id = data.get('cohort')
             cohort = Cohort.objects.filter(pk=cohort_id).first()
 
             if not cohort:
                 return Response({'success': False, 'message': 'Invalid cohort'}, status=400)
 
-            # Check if a classe with the same unique fields already exists
             unique_fields = {'class_name': data.get(
                 'class_name'), 'cohort': cohort}
             if Classe.objects.filter(**unique_fields).exists():
                 return Response({'success': False, 'message': 'Classe with the same name already exists for this cohort'}, status=400)
 
-            # Create the new Classe instance
             data['cohort'] = cohort
 
-            # Handle optional date_end
             date_end = data.get('date_end')
             if date_end == '':
                 data['date_end'] = None
 
-            # Create the Classe instance
-            # classe_created = Classe.objects.create(**data)
             classe_created = cohort.classes.create(**data)
 
             if classe_created:
@@ -155,7 +145,7 @@ def manage_classe(request, id_classe=None):
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    elif request.method == 'PUT':
+    def put(self, request, id_classe=None):
         """Update a classe"""
         try:
             data = json.loads(request.body)
@@ -164,7 +154,7 @@ def manage_classe(request, id_classe=None):
 
         try:
             classe = Classe.objects.filter(
-                pk=data['id'], cohort_id=data['cohort']).update(**data)
+                pk=id_classe, cohort_id=data['cohort']).update(**data)
             if classe:
                 return Response({'success': True, 'message': 'Classe updated successfully'}, status=200)
             else:
@@ -172,11 +162,10 @@ def manage_classe(request, id_classe=None):
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    elif request.method == 'DELETE':
+    def delete(self, request, id_classe=None):
         """Delete a classe"""
         try:
-            classe = Classe.objects.filter(
-                pk=id_classe).delete()
+            classe = Classe.objects.filter(pk=id_classe).delete()
             if classe[0]:
                 return Response({'success': True, 'message': 'Classe deleted successfully'}, status=200)
             else:
@@ -184,17 +173,13 @@ def manage_classe(request, id_classe=None):
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    else:
-        return Response({'success': False, 'message': 'Method not allowed'}, status=405)
 
+class ManageMaterialView(APIAccessMixin, APIView):
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
 
-@ csrf_exempt
-def manage_material(request, id_material=None):
-    if not request.user.is_authenticated:
-        return Response({'success': False, 'message': 'User is not authenticated'}, status=401)
-
-    if request.method == 'GET':
-        """Retrieve material"""
+    def get(self, request, id_material=None):
+        """Retrieve material or list of materials"""
         try:
             if id_material:
                 material = Material.objects.get(pk=id_material)
@@ -210,7 +195,7 @@ def manage_material(request, id_material=None):
         except Exception as e:
             return Response({'success': False, 'message': f'Error: {e}'}, status=500)
 
-    elif request.method == 'POST':
+    def post(self, request):
         """Add new material"""
         try:
             data = json.loads(request.body)
@@ -218,7 +203,6 @@ def manage_material(request, id_material=None):
             return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
 
         try:
-
             category = data.get('category')
             item = data.get('item')
 
@@ -226,15 +210,13 @@ def manage_material(request, id_material=None):
             if Material.objects.filter(category=category, item=item).exists():
                 return Response({'success': False, 'message': 'Item already exists in this category'}, status=400)
 
-            material = Material.create(**data)
+            material = Material.objects.create(**data)
             if material:
                 return Response({'success': True, 'message': 'Material added successfully'}, status=201)
-        except json.JSONDecodeError:
-            return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    elif request.method == 'PUT':
+    def put(self, request, id_material=None):
         """Update a material"""
         try:
             data = json.loads(request.body)
@@ -242,7 +224,7 @@ def manage_material(request, id_material=None):
             return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
 
         try:
-            material = Material.update(data['id'], **data)
+            material = Material.objects.filter(pk=id_material).update(**data)
             if material:
                 return Response({'success': True, 'message': 'Material updated successfully'}, status=200)
             else:
@@ -250,28 +232,24 @@ def manage_material(request, id_material=None):
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    elif request.method == 'DELETE':
+    def delete(self, request, id_material=None):
         """Delete a material"""
         try:
-            material = Material.delete(id_material)
-            if material:
+            material = Material.objects.filter(pk=id_material).delete()
+            if material[0]:
                 return Response({'success': True, 'message': 'Material deleted successfully'}, status=200)
             else:
                 return Response({'success': False, 'message': 'Material not found'}, status=404)
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    else:
-        return Response({'success': False, 'message': 'Method not allowed'}, status=405)
 
+class ManageSalleFormationView(APIAccessMixin, APIView):
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
 
-@ csrf_exempt
-def manage_salle_formation(request, id_salle=None):
-    if not request.user.is_authenticated:
-        return Response({'success': False, 'message': 'User is not authenticated'}, status=401)
-
-    if request.method == 'GET':
-        """Retrieve salle formation"""
+    def get(self, request, id_salle=None):
+        """Retrieve salle formation or list of salle formations"""
         try:
             if id_salle:
                 salle = SalleFormation.objects.get(pk=id_salle)
@@ -284,7 +262,6 @@ def manage_salle_formation(request, id_salle=None):
                 salle_dict = model_to_dict(salle)
                 salle_dict['materials'] = materials_list
                 return Response({'success': True, 'data': salle_dict}, status=200)
-
             else:
                 salles = SalleFormation.objects.all()
                 salles_list = []
@@ -302,7 +279,7 @@ def manage_salle_formation(request, id_salle=None):
         except Exception as e:
             return Response({'success': False, 'message': f'Error: {e}'}, status=500)
 
-    elif request.method == 'POST':
+    def post(self, request):
         """Add new salle formation"""
         try:
             data = json.loads(request.body)
@@ -310,7 +287,6 @@ def manage_salle_formation(request, id_salle=None):
             return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
 
         try:
-            # Validate and retrieve related models
             salle_name = data.get('salle_name')
             etage = data.get('etage')
             capacity = data.get('capacity')
@@ -340,13 +316,12 @@ def manage_salle_formation(request, id_salle=None):
                         count_item=count_item
                     )
 
-            # Return success response
             return Response({'success': True, 'message': 'Salle formation added successfully'}, status=201)
 
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    elif request.method == 'PUT':
+    def put(self, request, id_salle=None):
         """Update a salle formation"""
         try:
             data = json.loads(request.body)
@@ -354,10 +329,9 @@ def manage_salle_formation(request, id_salle=None):
             return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
 
         try:
-            salle_id = data.get('salle_id', 0)
-            if salle_id:
-                # Retrieve the SalleFormation instance
-                salle = SalleFormation.objects.get(pk=salle_id)
+            # salle_id = data.get('salle_id', 0)
+            if id_salle:
+                salle = SalleFormation.objects.get(pk=id_salle)
 
                 # Update SalleFormation fields if provided in the request
                 salle.salle_name = data.get('salle_name', salle.salle_name)
@@ -365,8 +339,11 @@ def manage_salle_formation(request, id_salle=None):
                 salle.capacity = data.get('capacity', salle.capacity)
                 salle.save()
 
-                # Update or create MaterialSalleFormation instances associated with this SalleFormation
+                # Get the list of materials provided in the request
                 material_data = data.get('material', [])
+                new_material_ids = set()
+
+                # Update or create MaterialSalleFormation instances associated with this SalleFormation
                 for material_info in material_data:
                     material_id = material_info.get('material_id')
                     count_item = material_info.get('count_item')
@@ -374,11 +351,18 @@ def manage_salle_formation(request, id_salle=None):
                     material = Material.objects.filter(pk=material_id).first()
                     if material:
                         # Update or create MaterialSalleFormation instance
-                        material_salle, created = MaterialSalleFormation.objects.update_or_create(
+                        MaterialSalleFormation.objects.update_or_create(
                             salle_formation=salle,
                             material=material,
                             defaults={'count_item': count_item}
                         )
+                        # Add the material_id to the set of new_material_ids
+                        new_material_ids.add(material_id)
+
+                # Remove materials that are no longer in the new_material_ids list
+                MaterialSalleFormation.objects.filter(
+                    salle_formation=salle
+                ).exclude(material__id__in=new_material_ids).delete()
 
                 return Response({'success': True, 'message': 'Salle formation updated successfully'}, status=200)
             else:
@@ -389,28 +373,30 @@ def manage_salle_formation(request, id_salle=None):
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
 
-    elif request.method == 'DELETE':
+    def delete(self, request, id_salle=None):
         """Delete a salle formation"""
         try:
-            salle = SalleFormation.delete(id_salle)
-            if salle:
-                return Response({'success': True, 'message': 'Salle formation deleted successfully'}, status=200)
+            if id_salle:
+                salle = SalleFormation.objects.filter(pk=id_salle).delete()
+                if salle[0]:
+                    return Response({'success': True, 'message': 'Salle formation deleted successfully'}, status=200)
+                else:
+                    return Response({'success': False, 'message': 'Salle formation not found'}, status=404)
             else:
-                return Response({'success': False, 'message': 'Salle formation not found'}, status=404)
+                return Response({'success': False, 'message': 'Salle ID not provided'}, status=400)
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    else:
-        return Response({'success': False, 'message': 'Method not allowed'}, status=405)
 
+class ManageSeanceView(APIAccessMixin, APIView):
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
 
-@ csrf_exempt
-def manage_seance(request, id_seance=None):
-    if not request.user.is_authenticated:
-        return Response({'success': False, 'message': 'User is not authenticated'}, status=401)
-
-    if request.method == 'GET':
+    def get(self, request, id_seance=None):
         """Retrieve seance(s)"""
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=401)
+
         try:
             if id_seance:
                 seance = Seance.objects.get(pk=id_seance)
@@ -425,8 +411,11 @@ def manage_seance(request, id_seance=None):
         except Exception as e:
             return Response({'success': False, 'message': f'Error: {e}'}, status=500)
 
-    elif request.method == 'POST':
+    def post(self, request):
         """Add new seance"""
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=401)
+
         try:
             data = json.loads(request.body)
 
@@ -493,23 +482,21 @@ def manage_seance(request, id_seance=None):
                 salle_formation=salle_formation
             )
 
-            if seance:
-                return Response({'success': True, 'message': 'Seance added successfully'}, status=201)
-            else:
-                return Response({'success': False, 'message': 'Failed to add seance'}, status=400)
+            return Response({'success': True, 'message': 'Seance added successfully'}, status=201)
 
         except KeyError as e:
             missing_field = e.args[0]
             return Response({'success': False, 'message': f'Missing field: {missing_field}'}, status=400)
-
         except ValidationError as e:
             return Response({'success': False, 'message': f'Validation Error: {e}'}, status=400)
-
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    elif request.method == 'PUT':
+    def put(self, request):
         """Update a seance"""
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=401)
+
         try:
             data = json.loads(request.body)
             # Validate and retrieve related models
@@ -522,7 +509,6 @@ def manage_seance(request, id_seance=None):
             return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
 
         try:
-
             classe = Classe.objects.get(pk=classe_id)
             teacher = Teacher.objects.get(pk=teacher_id)
             matiere = Matiere.objects.get(pk=matiere_id)
@@ -552,18 +538,18 @@ def manage_seance(request, id_seance=None):
 
         except Seance.DoesNotExist:
             return Response({'success': False, 'message': 'Seance not found'}, status=404)
-
         except (Classe.DoesNotExist, Teacher.DoesNotExist, Matiere.DoesNotExist, SalleFormation.DoesNotExist) as e:
             return Response({'success': False, 'message': 'Related object not found'}, status=404)
-
         except ValidationError as e:
             return Response({'success': False, 'message': f'Validation Error: {e}'}, status=400)
-
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    elif request.method == 'DELETE':
+    def delete(self, request, id_seance=None):
         """Delete a seance"""
+        # if not request.user.is_authenticated:
+        #     return Response({'success': False, 'message': 'User is not authenticated'}, status=401)
+
         try:
             seance = Seance.objects.filter(pk=id_seance).delete()
             if seance[0]:
@@ -573,13 +559,9 @@ def manage_seance(request, id_seance=None):
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=400)
 
-    else:
-        return Response({'success': False, 'message': 'Method not allowed'}, status=405)
-
 
 # ============================No neeed manage==================================
 
-# @csrf_exempt
 # def manage_material_salle_formation(request, id_material_salle=None):
 #     if request.method == 'GET':
 #         """Retrieve material salle formation"""

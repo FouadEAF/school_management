@@ -1,40 +1,24 @@
 from django.urls import path
-from .views import ManageCohortView
+from .views import ManageCohortView, ManageClasseView, ManageMaterialView, ManageSalleFormationView, ManageSeanceView
 
 urlpatterns = [
     # Paths for Cohort management
-    path('cohort', ManageCohortView.as_view(), name='manage_cohort'),
-    path('cohort/<int:id_cohort>',
-         ManageCohortView.as_view(), name='manage_cohort'),
+    path('cohort', ManageCohortView.as_view()),
+    path('cohort/<int:id_cohort>', ManageCohortView.as_view()),
 
+    # Paths for Classe management
+    path('classe', ManageClasseView.as_view()),
+    path('classe/<int:id_classe>', ManageClasseView.as_view()),
 
+    # Paths for Material management
+    path('material', ManageMaterialView.as_view()),
+    path('material/<int:id_material>', ManageMaterialView.as_view()),
 
-    #     # Paths for Classe management
-    #     path('classe',
-    #          views.manage_classe, name='create_classe'),
-    #     path('classe/<int:id_classe>',
-    #          views.manage_classe, name='manage_classe'),
+    # Paths for SalleFormation management
+    path('salle_formation', ManageSalleFormationView.as_view()),
+    path('salle_formation/<int:id_salle>', ManageSalleFormationView.as_view()),
 
-    #     # Paths for SalleFormation management
-    #     path('salle', views.manage_salle_formation,
-    #          name='manage_salle_formation'),
-    #     path('salle/<int:id_salle>',
-    #          views.manage_salle_formation, name='manage_salle_formation'),
-
-    #     # Paths for Material management
-    #     path('material', views.manage_material, name='manage_material'),
-    #     path('material/<int:id_material>',
-    #          views.manage_material, name='manage_material'),
-
-    #     # Paths for MaterialSalleFormation management
-    #     #     path('materialsalle/', views.manage_material_salle_formation,
-    #     #          name='manage_material_salle_formation'),
-    #     #     path('materialsalle/<int:id_material_salle_formation>/',
-    #     #          views.manage_material_salle_formation, name='manage_material_salle_formation'),
-
-    #     # Paths for Seance management
-    #     path('seance', views.manage_seance, name='manage_seance'),
-    #     path('seance/<int:id_seance>', views.manage_seance, name='manage_seance'),
-
-
+    # Paths for Seance management
+    path('seance', ManageSeanceView.as_view()),
+    path('seance/<int:id_seance>', ManageSeanceView.as_view()),
 ]
