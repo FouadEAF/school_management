@@ -55,8 +55,8 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: true,
       title: 'School Management',
-      theme: LightTheme,
-      darkTheme: DarkTheme,
+      theme: DarkTheme,
+      darkTheme: LightTheme,
       themeMode: _themeMode,
       navigatorKey: navigatorKey, // Set the navigator key
       home: HomePage(), //(onThemeToggle: _toggleThemeMode),

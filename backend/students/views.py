@@ -1,12 +1,10 @@
 from .models import Absence, Student, Note
 from teachers.models import Matiere, Teacher
 from school.models import Classe, Seance
-from rest_framework.response import Response
-from django.views import View
 from django.forms.models import model_to_dict
 import json
+from rest_framework.response import Response
 
-from .models import Student
 from rest_framework.views import APIView
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -62,8 +60,6 @@ class ManageStudentView(APIAccessMixin, APIView):
                 birthday=birthday,
             )
             return Response({'success': True, 'message': 'Student added successfully'}, status=201)
-        except json.JSONDecodeError:
-            return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
 
@@ -91,8 +87,7 @@ class ManageStudentView(APIAccessMixin, APIView):
             return Response({'success': True, 'message': 'Student updated successfully'}, status=200)
         except Student.DoesNotExist:
             return Response({'success': False, 'message': 'Student not found'}, status=404)
-        except json.JSONDecodeError:
-            return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
+
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
 
@@ -181,8 +176,6 @@ class ManageNoteView(APIAccessMixin, APIView):
                 student=student,
             )
             return Response({'success': True, 'message': 'Note added successfully'}, status=201)
-        except json.JSONDecodeError:
-            return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
 
@@ -211,8 +204,7 @@ class ManageNoteView(APIAccessMixin, APIView):
             return Response({'success': True, 'message': 'Note updated successfully'}, status=200)
         except Note.DoesNotExist:
             return Response({'success': False, 'message': 'Note not found'}, status=404)
-        except json.JSONDecodeError:
-            return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
+
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
 
@@ -267,7 +259,7 @@ class ManageAbsenceView(APIAccessMixin, APIView):
         try:
 
             if not student_id or not seance_id:
-                return Response({'success': False, 'message': 'Missing student_id or absence_date'}, status=400)
+                return Response({'success': False, 'message': 'Missing student_id or seance_id'}, status=400)
 
             try:
                 student = Student.objects.get(pk=student_id)
@@ -277,7 +269,7 @@ class ManageAbsenceView(APIAccessMixin, APIView):
             try:
                 seance = Seance.objects.get(pk=seance_id)
             except Classe.DoesNotExist:
-                return Response({'success': False, 'message': 'No classe found'}, status=404)
+                return Response({'success': False, 'message': 'No class found'}, status=404)
 
             absence = Absence.objects.create(
                 status=status,
@@ -286,8 +278,6 @@ class ManageAbsenceView(APIAccessMixin, APIView):
                 reason=reason,
             )
             return Response({'success': True, 'message': 'Absence added successfully'}, status=201)
-        except json.JSONDecodeError:
-            return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
 
@@ -305,18 +295,15 @@ class ManageAbsenceView(APIAccessMixin, APIView):
                 return Response({'success': False, 'message': 'Absence ID not provided'}, status=400)
 
             absence = Absence.objects.get(pk=id_absence)
+            absence.reason = data.get('reason', absence.reason)
             absence.student_id = data.get('student_id', absence.student_id)
             absence.classe_id = data.get('classe_id', absence.classe_id)
-            absence.absence_date = data.get(
-                'absence_date', absence.absence_date)
-            absence.reason = data.get('reason', absence.reason)
+
             absence.save()
 
             return Response({'success': True, 'message': 'Absence updated successfully'}, status=200)
         except Absence.DoesNotExist:
             return Response({'success': False, 'message': 'Absence not found'}, status=404)
-        except json.JSONDecodeError:
-            return Response({'success': False, 'message': 'Invalid JSON data'}, status=400)
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
 

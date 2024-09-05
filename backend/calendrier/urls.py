@@ -1,9 +1,7 @@
 from django.urls import path
-from .views import manage_calendrier
+from .views import CalendrierView
 
 urlpatterns = [
-
-    path('', manage_calendrier, name='calendrier_create'),
-    path('<int:id_calendrier>/',
-         manage_calendrier, name='manage_calendrier'),
+    path('', CalendrierView.as_view()),
+    path('<int:id_calendrier>', CalendrierView.as_view()),
 ]
